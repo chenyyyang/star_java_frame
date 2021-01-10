@@ -69,6 +69,7 @@ public class KafkaConsumerRunner implements Runnable {
                 // 外层try catch保证循环不会异常退出
                 try {
                     //必须在下次 poll 之前消费完这些数据, 且总耗时不得超过 SESSION_TIMEOUT_MS_CONFIG 的值
+                    //With timeout set to MAX_VALUE, consumer will wait forever to get the data
                     ConsumerRecords<String, String> records = consumer.poll(1000);
 
                     preConsume();
