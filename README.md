@@ -35,16 +35,17 @@ if (record != null && record.value() != null) {
 UserWrapper user = JSONUtilsEx.deserialize(record.value(), UserWrapper.class);
 			
 userService.createUser(user);
-} }
+} 
+}
 ```
-这里还抽象不够好，理论上@KafkaConsumerHandlerMethod和@OpenAPIMethod应该是一样的用法，都是把不同的协议中的数据转成service层需要的对象。
+这里抽象的不够好，理论上@KafkaConsumerHandlerMethod和@OpenAPIMethod应该是一样的用法，都是把收到的CQE对象动态dispatch到Service处理。
 
 
 ## high light
 - 减少代码量，更佳的实践DDD。一个包满足Java后端开发的方方面面
-- interface层封装支持http/kafka（0.10.0），标准化输入输出和异常处理、统一异常处理，traceId追踪、session上下文管理、分页参数管理
+- interface层封装支持http/kafka（0.10.0），标准化请求参数和响应格式、统一异常处理，session上下文管理、分页参数管理
 - 封装AsyncHttpClient
-- 多数据源路由，实践读写分离
+- 多数据源路由，实现读写分离
 - 各种工具包，BeanUtils、DateTimeUtils、JsonUtils
 
 ## implementation
