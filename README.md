@@ -18,7 +18,7 @@ public class UserService {
     private UserDao userDao;
   
     @OpenAPIMethod(methodName = "author/createUser")
-    public User createUser(User user){
+    public User createUser(@Validate User user){
         UserSession session = TokenService.getSession();
         user.setCreateUser(session.getName());
         retrun userDao.insert(user);
