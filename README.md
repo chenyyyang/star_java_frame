@@ -59,14 +59,14 @@ public class UserService {
 │   │   │   ├── KafkaConsumerStarter.java
 │   │   │   └── KafkaProducerStarter.java
 依赖
-	<dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>0.10.0.0</version>
-        </dependency>
+<dependency>
+<groupId>org.apache.kafka</groupId>
+<artifactId>kafka-clients</artifactId>
+<version>0.10.0.0</version>
+</dependency>
 
 消费者初始化：
-	@PostConstruct 
+    @PostConstruct 
     public void initConsumer()throws Exception {
         // 初始化消费者线程
         KafkaConsumerStarter.init(brokerAddress, consumerGroupName, 0,0,0);
@@ -78,18 +78,18 @@ public class UserService {
         KafkaConsumerStarter.destroy();
     }
 消费者 绑定事件处理函数到某个topic:
- 	//自定义注解，绑定topic和消费方法
+     //自定义注解，绑定topic和消费方法
     //消费逻辑无需try catch异常，框架代码会catch。如果有显式的异常，直接在方法名后面抛出
     @KafkaConsumerHandlerMethod(topic = "topicName") 
     public void topicName(ConsumerRecord<?, String> record) throws xxxException {
         //消费逻辑
-        ...
+     }
 在@PostConstruct方法中调用KafkaConsumerStarter.init()方法，初始化consumer配置和consumer线程
 init方法的主要参数如下：
 @param brokerAddress                 broker地址,逗号分隔
 @param consumerGroupName      consumerGroupName 
-@param sessionTimeOutMs           session超时时间，默认30s
-@param maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
+@param sessionTimeOutMs           session超时时间，默认30s,0.10版本的kafka心跳线程和poll线程在一起，session超时broker就收不到心跳
+@param maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
 @param consumerThreadNum      consumer实例个数，既consumer线程数，默认为6。一个consumer对于一个或多个分区，阿里云默认一个topic创建的分区数为6的倍数。因此consumerThreadNum建议也设置为6的倍数，但最好不要超过24。
 消费方法中加上@KafkaConsumerHandlerMethod(topic = "topicName")注解。消费方法无需捕获异常，框架层已经捕获并打印了异常，并且发送至cat。
 注意消费方法一定要实现幂等，即同一条消息消费一次和消费多次的结果一致。目前consumer的实现策略只保证每条消息至少被消费一次，不保证exactly once。
@@ -102,7 +102,7 @@ KafkaProducerStarter.send(topic, message)
 
 3.发送顺序消息
 KafkaProducerStarter.send(key, topic, message)
-注: 相同key的消息会被发送到同一个分区，以保证相同业务上产生消息的顺序性。应该使用如：订单id等属性作为key，以此来保证同一个订单或桩产生的消息之间的先后顺序，避免出现“先产生的消息后消费”这种问题。默认情况下，消息队列Kafka版为了提升可用性，并不保证单个分区内绝对有序，在升级或者宕机时，会发生少量消息乱序（某个分区挂掉后把消息Failover到其它分区）。
+注: 相同key的消息会被发送到同一个分区，以保证相同业务上产生消息的顺序性。应该使用如：订单id等属性作为key，以此来保证同一个订单产生的消息之间的先后顺序，避免出现“先产生的消息后消费”这种问题。默认情况下，消息队列Kafka版为了提升可用性，并不保证单个分区内绝对有序，在升级或者宕机时，会发生少量消息乱序（某个分区挂掉后把消息Failover到其它分区）。
 
     
 ```
@@ -142,6 +142,15 @@ dataSource
     │   │   └── DynamicDataSourceTransactionManager.java
     
 ```
+对于@DynamicDataSource(key = "db1")这样的注解 。
+首先是利用AOP代理被注解的方法，把key=db1放入DynamicDataSourceManager，这里面有个ThreadLocal存放这个key。
+
+DynamicDataSourceManager继承自AbstractRoutingDataSource
+public abstract class AbstractRoutingDataSource extends AbstractDataSource implements InitializingBean {
+
+AbstractRoutingDataSource是spring支持数据源切换的路由数据源抽象，而且继承自AbstractDataSource，实现InitializingBean是为了再bean加载完成时，根据key="db1"/“db2”  value=DruidDataSource的形式将多个数据源注入该bean作为属性。
+
+在DAO决定使用哪个数据源的时候会调用determineCurrentLookupKey，而这个方法已经被DynamicDataSourceManager重写了，会从ThreadLocal种取出这个key，如"db1"。
 
 ### performance
 ```
