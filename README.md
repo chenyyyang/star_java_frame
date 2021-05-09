@@ -42,7 +42,11 @@ public class UserService {
 
 
 ### high light
-
+- 减少代码量，更佳的实践DDD。一个包满足Java后端开发的方方面面
+- interface层封装支持http/kafka（0.10.0），标准化输入输出和异常处理、统一异常处理，traceId追踪、session上下文管理、分页参数管理
+- 封装AsyncHttpClient
+- 多数据源路由，实践读写分离
+- 各种工具包，BeanUtils、DateTimeUtils、JsonUtils
 
 ### implementation
 
@@ -55,6 +59,7 @@ public class UserService {
 git clone https://github.com/chenyyyang/star_java_frame
 mvn install 
 打成jar后，deploy 到私服或者 <system>标签引入依赖
+
 ```
 
 
