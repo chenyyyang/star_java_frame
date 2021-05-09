@@ -57,9 +57,54 @@ public class UserService {
 │   │   │   ├── KafkaConsumerHandlerMethod.java
 │   │   │   ├── KafkaConsumerRunner.java
 │   │   │   ├── KafkaConsumerStarter.java
-│   │   │   └── KafkaProducerStarter.java
+│   │   │   └── KafkaProducerStarter.java
+依赖
+	<dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.10.0.0</version>
+        </dependency>
 
+消费者初始化：
+	@PostConstruct 
+    public void initConsumer()throws Exception {
+        // 初始化消费者线程
+        KafkaConsumerStarter.init(brokerAddress, consumerGroupName, 0,0,0);
+    }
+    
+    @PreDestroy
+    public void destroy(){
+        // 销毁消费者线程
+        KafkaConsumerStarter.destroy();
+    }
+消费者 绑定事件处理函数到某个topic:
+ 	//自定义注解，绑定topic和消费方法
+    //消费逻辑无需try catch异常，框架代码会catch。如果有显式的异常，直接在方法名后面抛出
+    @KafkaConsumerHandlerMethod(topic = "topicName") 
+    public void topicName(ConsumerRecord<?, String> record) throws xxxException {
+        //消费逻辑
+        ...
+在@PostConstruct方法中调用KafkaConsumerStarter.init()方法，初始化consumer配置和consumer线程
+init方法的主要参数如下：
+@param brokerAddress                 broker地址,逗号分隔
+@param consumerGroupName      consumerGroupName 
+@param sessionTimeOutMs           session超时时间，默认30s
+@param maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
+@param consumerThreadNum      consumer实例个数，既consumer线程数，默认为6。一个consumer对于一个或多个分区，阿里云默认一个topic创建的分区数为6的倍数。因此consumerThreadNum建议也设置为6的倍数，但最好不要超过24。
+消费方法中加上@KafkaConsumerHandlerMethod(topic = "topicName")注解。消费方法无需捕获异常，框架层已经捕获并打印了异常，并且发送至cat。
+注意消费方法一定要实现幂等，即同一条消息消费一次和消费多次的结果一致。目前consumer的实现策略只保证每条消息至少被消费一次，不保证exactly once。
 
+生产者初始化：
+KafkaProducerStarter.init(brokerAddress)
+
+生产者发送消息到某个topic:
+KafkaProducerStarter.send(topic, message)
+
+3.发送顺序消息
+KafkaProducerStarter.send(key, topic, message)
+注: 相同key的消息会被发送到同一个分区，以保证相同业务上产生消息的顺序性。应该使用如：订单id等属性作为key，以此来保证同一个订单或桩产生的消息之间的先后顺序，避免出现“先产生的消息后消费”这种问题。默认情况下，消息队列Kafka版为了提升可用性，并不保证单个分区内绝对有序，在升级或者宕机时，会发生少量消息乱序（某个分区挂掉后把消息Failover到其它分区）。
+
+    
 ```
 ##### @OpenAPI的实现
 ```
