@@ -1,6 +1,6 @@
 # star_java_frame
 
-### brief introduction
+## brief introduction
 以前，假如我们要实现user表的增删改查功能，我需要写UserController,UserService,UserDao,UserMapper...   
 然后写一个insertUser接口,需要在Controller校验参数，取出session，处理service给出的是Result是success还是fail，处理service的异常避免外泄给前端。  
 在UserService组装UserDO，加入session中的用户名作为createUser，再交给UserDao写入DB，然后删除缓存等  
@@ -41,14 +41,14 @@ public class UserService {
 这里还抽象不够好，理论上@KafkaConsumerHandlerMethod和@OpenAPIMethod应该是一样的用法，都是把不同的协议中的数据转成service层需要的对象。
 
 
-### high light
+## high light
 - 减少代码量，更佳的实践DDD。一个包满足Java后端开发的方方面面
 - interface层封装支持http/kafka（0.10.0），标准化输入输出和异常处理、统一异常处理，traceId追踪、session上下文管理、分页参数管理
 - 封装AsyncHttpClient
 - 多数据源路由，实践读写分离
 - 各种工具包，BeanUtils、DateTimeUtils、JsonUtils
 
-### implementation
+## implementation
 
 ##### @KafkaConsumerHandlerMethod的实现
 ```
@@ -59,11 +59,7 @@ public class UserService {
 │   │   │   ├── KafkaConsumerStarter.java
 │   │   │   └── KafkaProducerStarter.java
 依赖
-<dependency>
-<groupId>org.apache.kafka</groupId>
-<artifactId>kafka-clients</artifactId>
-<version>0.10.0.0</version>
-</dependency>
+kafka-clients 0.10.0.0
 
 消费者初始化：
     @PostConstruct 
@@ -78,19 +74,19 @@ public class UserService {
         KafkaConsumerStarter.destroy();
     }
 消费者 绑定事件处理函数到某个topic:
-     //自定义注解，绑定topic和消费方法
+  
     //消费逻辑无需try catch异常，框架代码会catch。如果有显式的异常，直接在方法名后面抛出
     @KafkaConsumerHandlerMethod(topic = "topicName") 
     public void topicName(ConsumerRecord<?, String> record) throws xxxException {
         //消费逻辑
      }
 在@PostConstruct方法中调用KafkaConsumerStarter.init()方法，初始化consumer配置和consumer线程
-init方法的主要参数如下：
-@param brokerAddress                 broker地址,逗号分隔
-@param consumerGroupName      consumerGroupName 
-@param sessionTimeOutMs           session超时时间，默认30s,0.10版本的kafka心跳线程和poll线程在一起，session超时broker就收不到心跳
-@param maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
-@param consumerThreadNum      consumer实例个数，既consumer线程数，默认为6。一个consumer对于一个或多个分区，阿里云默认一个topic创建的分区数为6的倍数。因此consumerThreadNum建议也设置为6的倍数，但最好不要超过24。
+init方法的主要参数：
+brokerAddress                 broker地址,逗号分隔
+consumerGroupName      consumerGroupName 
+sessionTimeOutMs           session超时时间，默认30s,0.10版本的kafka心跳线程和poll线程在一起，session超时broker就收不到心跳
+maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
+consumerThreadNum      consumer实例个数，既consumer线程数，默认为6。一个consumer对于一个或多个分区
 消费方法中加上@KafkaConsumerHandlerMethod(topic = "topicName")注解。消费方法无需捕获异常，框架层已经捕获并打印了异常，并且发送至cat。
 注意消费方法一定要实现幂等，即同一条消息消费一次和消费多次的结果一致。目前consumer的实现策略只保证每条消息至少被消费一次，不保证exactly once。
 
@@ -126,9 +122,32 @@ servlet
     │   │   └── PageLimitHolderFilter.java
     │   ├── servlet
     │   │   ├── ServletHolderFilter.java
-    │   │   └── ServletInfo.java
+    │   │   └── ServletInfo.java
 
+这里依赖原生servlet-api。
+初始化openAPI的servlet和管理session以及分页参数的Filter
+@Bean
+public ServletRegistrationBean openAPIJsonServlet() {
+        ServletRegistrationBean servletRegistrationBean = new ServletRegistrationBean(new OpenAPIJsonServlet(), "/api/*");
+        servletRegistrationBean.setName("xxx");
+        Map<String, String> initParameters = new HashMap<String, String>();
+        initParameters.put("rateLimit", "150");
+        servletRegistrationBean.setInitParameters(initParameters);
+        return servletRegistrationBean;
+    }
+@Bean
+public FilterRegistrationBean sessionFilter() {
+        FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+        registrationBean.setFilter(new SessionHolderFilter());
+        registrationBean.setUrlPatterns(Arrays.asList(new String[]{"*.do"}));
+        registrationBean.setOrder(6);
+        return registrationBean;
+    }
 
+然后在代码中即可即可使用，使用类似SpringMVC的 @RequestMapping。获取分页则使用
+PageLimit pageLimit = PageLimitHolderFilter.getContext();
+list = pageLimit.limitList(list);
+非常方便。
 
 ```
 
@@ -150,7 +169,9 @@ public abstract class AbstractRoutingDataSource extends AbstractDataSource imple
 
 AbstractRoutingDataSource是spring支持数据源切换的路由数据源抽象，而且继承自AbstractDataSource，实现InitializingBean是为了再bean加载完成时，根据key="db1"/“db2”  value=DruidDataSource的形式将多个数据源注入该bean作为属性。
 
-在DAO决定使用哪个数据源的时候会调用determineCurrentLookupKey，而这个方法已经被DynamicDataSourceManager重写了，会从ThreadLocal种取出这个key，如"db1"。
+在DAO决定使用哪个数据源的时候会调用determineCurrentLookupKey，而这个方法已经被DynamicDataSourceManager重写了，会从ThreadLocal种取出这个key对应的DataSource，如"db1"。
+确定数据源后就可以determineTargetDataSource().getConnection()了。
+
 
 ### performance
 ```
