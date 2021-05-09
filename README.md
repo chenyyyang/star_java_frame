@@ -26,7 +26,19 @@ public class UserService {
 
 }
 ```
-很明显，框架把之前controller干的事做了，UserService不用关心调用自己的是http请求或者Kafka的消息，不用处理响应，也不用处理异常，框架会统一处理、记录log上传监控平台等，框架收到异常会返回400，否则都是200成功。
+很明显，框架把之前controller干的事做了，UserService不用关心调用自己的是http请求或者Kafka的消息，不用处理响应，也不用处理异常，框架会统一处理、记录log上传监控平台等，框架收到异常会返回400，否则都是200成功。下面换个协议，以kafka来举例
+```
+    @KafkaConsumerHandlerMethod(topic = "data_user")
+	public void dataUser(ConsumerRecord<?, String> record) throws Exception {
+		if (record != null && record.value() != null) {
+			
+			UserWrapper user = JSONUtilsEx.deserialize(record.value(), UserWrapper.class);
+			
+			userService.createUser(user);
+		} 
+	}
+```
+这里还抽象不够好，理论上@KafkaConsumerHandlerMethod和@OpenAPIMethod应该是一样的用法，都是把不同的协议中的数据转成service层需要的对象。
 
 
 ### high light
