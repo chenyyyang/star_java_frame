@@ -49,16 +49,53 @@ public class UserService {
 - 各种工具包，BeanUtils、DateTimeUtils、JsonUtils
 
 ### implementation
-##### @OpenAPI的实现
-```
-```
 
 ##### @KafkaConsumerHandlerMethod的实现
 ```
+ kafka
+│   │   │   ├── KafkaConsumerHandler.java
+│   │   │   ├── KafkaConsumerHandlerMethod.java
+│   │   │   ├── KafkaConsumerRunner.java
+│   │   │   ├── KafkaConsumerStarter.java
+│   │   │   └── KafkaProducerStarter.java
+
+
+```
+##### @OpenAPI的实现
+```
+servlet
+│   │   │   ├── OpenAPI.java
+│   │   │   ├── OpenAPIMethod.java
+│   │   │   └── OpenAPIMethodProto.java
+│   │   └── json
+│   │       ├── MJSONResultEntity.java
+│   │       └── OpenAPIJsonServlet.java
+
+	    exception
+    │   │   ├── ServiceException.java
+    │   │   └── ServiceWarn.java
+    │   ├── local
+    │   │   └── LocalAttributeHolder.java
+    │   ├── pageLimit
+    │   │   ├── PageLimit.java
+    │   │   └── PageLimitHolderFilter.java
+    │   ├── servlet
+    │   │   ├── ServletHolderFilter.java
+    │   │   └── ServletInfo.java
+
+
+
 ```
 
-##### @DynamicDataSource(key = "")的实现
+##### @DynamicDataSource(key = "")动态路由切换的实现
 ```
+dataSource
+    │   │   ├── DynamicDataSource.java
+    │   │   ├── DynamicDataSourceEnum.java
+    │   │   ├── DynamicDataSourceInterceptor.java
+    │   │   ├── DynamicDataSourceManager.java
+    │   │   └── DynamicDataSourceTransactionManager.java
+    
 ```
 
 ### performance
