@@ -28,15 +28,14 @@ public class UserService {
 ```
 很明显，框架把之前controller干的事做了，UserService不用关心调用自己的是http请求或者Kafka的消息，不用处理响应，也不用处理异常，框架会统一处理、记录log上传监控平台等，框架收到异常会返回400，否则都是200成功。下面换个协议，以kafka来举例
 ```
-    @KafkaConsumerHandlerMethod(topic = "data_user")
-	public void dataUser(ConsumerRecord<?, String> record) throws Exception {
-		if (record != null && record.value() != null) {
+@KafkaConsumerHandlerMethod(topic = "data_user")
+public void dataUser(ConsumerRecord<?, String> record) throws Exception {
+if (record != null && record.value() != null) {
 			
-			UserWrapper user = JSONUtilsEx.deserialize(record.value(), UserWrapper.class);
+UserWrapper user = JSONUtilsEx.deserialize(record.value(), UserWrapper.class);
 			
-			userService.createUser(user);
-		} 
-	}
+userService.createUser(user);
+} }
 ```
 这里还抽象不够好，理论上@KafkaConsumerHandlerMethod和@OpenAPIMethod应该是一样的用法，都是把不同的协议中的数据转成service层需要的对象。
 
@@ -102,7 +101,7 @@ KafkaProducerStarter.send(key, topic, message)
 
     
 ```
-##### @OpenAPI的实现
+##### @OpenAPIMethod的实现
 ```
 servlet
 │   │   │   ├── OpenAPI.java
@@ -148,7 +147,7 @@ public FilterRegistrationBean sessionFilter() {
 PageLimit pageLimit = PageLimitHolderFilter.getContext();
 list = pageLimit.limitList(list);
 非常方便。
-
+实现方式可以看OpenAPIJsonServlet类的源代码，本质上还是一个普通servlet类，servlet.init时候把被@openAPI注解的bean加载到内存cache，拦截到请求后到开始经过一系列处理，在运行时动态dispatch到对应的bean以及方法，invoke方法。这里的难点是把通过request中的参数准确dispatch到对应的方法。invoke后接收返回值组装Response对象，序列化和设置响应code。如果捕获到异常，判断是逻辑处理异常还是未预料到的异常，分别进行处理。
 ```
 
 ##### @DynamicDataSource(key = "")动态路由切换的实现
