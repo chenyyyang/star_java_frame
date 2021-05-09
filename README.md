@@ -49,10 +49,22 @@ public class UserService {
 - 各种工具包，BeanUtils、DateTimeUtils、JsonUtils
 
 ### implementation
+##### @OpenAPI的实现
+```
+```
 
+##### @KafkaConsumerHandlerMethod的实现
+```
+```
+
+##### @DynamicDataSource(key = "")的实现
+```
+```
 
 ### performance
-
+```
+TODO 目前已经在生产环境大量使用，可以在CAT监控看
+```
 
 ### deployment
 ```
