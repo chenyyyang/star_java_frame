@@ -80,16 +80,7 @@ kafka-clients 0.10.0.0
     public void topicName(ConsumerRecord<?, String> record) throws xxxException {
         //消费逻辑
      }
-在@PostConstruct方法中调用KafkaConsumerStarter.init()方法，初始化consumer配置和consumer线程
-init方法的主要参数：
-brokerAddress                 broker地址,逗号分隔
-consumerGroupName      consumerGroupName 
-sessionTimeOutMs           session超时时间，默认30s,0.10版本的kafka心跳线程和poll线程在一起，session超时broker就收不到心跳
-maxPollRecords               每次拉取消息条数，默认30条，请务必确保30秒内30条一定能消费完，否则会触发kafka broker rebalance，引发性能问题
-consumerThreadNum      consumer实例个数，既consumer线程数，默认为6。一个consumer对于一个或多个分区
-消费方法中加上@KafkaConsumerHandlerMethod(topic = "topicName")注解。消费方法无需捕获异常，框架层已经捕获并打印了异常，并且发送至cat。
-注意消费方法一定要实现幂等，即同一条消息消费一次和消费多次的结果一致。目前consumer的实现策略只保证每条消息至少被消费一次，不保证exactly once。
-
+--- 
 生产者初始化：
 KafkaProducerStarter.init(brokerAddress)
 
