@@ -6,7 +6,7 @@
 在UserService组装UserDO，加入session中的用户名作为createUser，再交给UserDao写入DB，然后删除缓存等  
 这样流水账式的代码在逻辑简单的时候好像没啥问题，逻辑清晰，但是随着业务的变化，当后人不断地在上面叠加新的逻辑时，会使代码复杂度增加、逻辑分支越来越多，最终造成bug或者没人敢重构的历史包袱。...  
 
-star_java_frame 框架就是按照DDD的分层思想，分离出独立的Interface接口层，负责处理网络协议相关的逻辑，拆除后可以统一的处理Json数据响应或者Exception。  
+按照DDD的分层思想，分离出独立的Interface接口层，负责处理网络协议相关的逻辑，拆除后可以统一的处理Json数据响应或者Exception，方便用户直接编写Application/Service/Domain层的代码，star_java_frame 框架会通过自定义注解的形式，把网络请求路由到对应的方法上。   
 Interface接口层的最大职责就是网络协议转化，这里的协议泛指http.dubbo.kafka...或者其他中间件的数据传输协议。看个例子把
 
 ```
